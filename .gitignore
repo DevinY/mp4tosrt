@@ -1,3 +1,4 @@
 # 保留 mp4 目錄結構，但排除目錄內所有檔案（類似 Laravel storage/logs）
 mp4/*
 !mp4/.gitkeep
+/.DS_Store

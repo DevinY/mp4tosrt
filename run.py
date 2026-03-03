@@ -2,6 +2,10 @@ import os
 import glob
 import mlx_whisper
 from datetime import timedelta
+from opencc import OpenCC
+
+# 簡體 → 繁體（台灣用字），Whisper 常輸出簡體，寫入字幕前強制轉成繁體
+cc_s2t = OpenCC("s2tw")
 
 # 設定目標目錄（如果是目前目錄下的 mp4 資料夾，就寫 "mp4"）
 TARGET_DIR = "mp4" 
@@ -49,7 +53,7 @@ def process_videos():
                 for i, segment in enumerate(result['segments'], start=1):
                     start = format_timestamp(segment['start'])
                     end = format_timestamp(segment['end'])
-                    text = segment['text'].strip()
+                    text = cc_s2t.convert(segment['text'].strip())
                     f.write(f"{i}\n{start} --> {end}\n{text}\n\n")
             
             print(f"✅ 成功生成字幕：{srt_path}")
