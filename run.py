@@ -1,5 +1,5 @@
 import os
-import glob
+from pathlib import Path
 import mlx_whisper
 from datetime import timedelta
 from opencc import OpenCC
@@ -21,10 +21,11 @@ def format_timestamp(seconds: float):
     return f"{hours:02d}:{minutes:02d}:{secs:02d},{millis:03d}"
 
 def process_videos():
-    # 使用 recursive=True 讓它自動進入子資料夾尋找
-    # **/*.mp4 代表找尋目前目錄及所有子目錄下的 mp4
-    search_pattern = os.path.join(TARGET_DIR, "**/*.mp4")
-    video_files = glob.glob(search_pattern, recursive=True)
+    # rglob 遞迴搜尋，suffix.lower() 讓 .mp4 / .MP4 / .Mp4 等都能匹配
+    video_files = sorted(
+        str(p) for p in Path(TARGET_DIR).rglob("*")
+        if p.is_file() and p.suffix.lower() == ".mp4"
+    )
 
     if not video_files:
         print(f"在 {TARGET_DIR} 目錄內找不到任何 .mp4 檔案。")
@@ -59,7 +60,13 @@ def process_videos():
             print(f"✅ 成功生成字幕：{srt_path}")
 
         except Exception as e:
-            print(f"❌ 處理 {video_path} 時出錯：{str(e)}")
+            err = str(e)
+            # 從 ffmpeg 冗長輸出中擷取關鍵錯誤（如 moov atom not found）
+            if "moov atom not found" in err:
+                err = "檔案損壞或未完整寫入（moov atom not found）"
+            elif len(err) > 200:
+                err = err[:200] + "..."
+            print(f"❌ 略過 {os.path.basename(video_path)}：{err}")
 
 if __name__ == "__main__":
     process_videos()
